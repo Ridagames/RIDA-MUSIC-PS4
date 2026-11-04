@@ -99,6 +99,7 @@ int main(void) {
  setvbuf(stdout,NULL,_IONBF,0);
  auto scene=new Scene2D(W,H,4);
  if(!scene->Init(0xC000000,2)) { printf("RIDA MUSIC: VIDEO INIT FAILED\n"); for(;;) sceKernelUsleep(1000000); }
+ scene->SetActiveFrameBuffer(0);
  if(scePadInit()!=0) { printf("RIDA MUSIC: PAD INIT FAILED\n"); }
  sceUserServiceInitialize(NULL);
  int user=-1;
