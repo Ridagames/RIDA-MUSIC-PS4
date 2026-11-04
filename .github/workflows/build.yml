@@ -31,7 +31,7 @@ jobs:
           docker run --rm \
             -v "$GITHUB_WORKSPACE:/workspace" \
             -w /workspace \
-            openorbisofficial/toolchain:v0.5.4 \
+            openorbisofficial/toolchain:latest \
             bash -lc '
               set -e
               : "${OO_PS4_TOOLCHAIN:?OO_PS4_TOOLCHAIN is not set in the OpenOrbis image}"
