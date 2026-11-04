@@ -1,0 +1,40 @@
+name: Build RIDA MUSIC PS4
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build PS4 PKG with OpenOrbis
+        uses: OpenOrbis/toolchain-action@main
+        with:
+          version: v0.5.4
+          command: |
+            set -e
+            mkdir -p sce_sys/about
+            RIGHT_SPRX="$(find "$OO_PS4_TOOLCHAIN" -name right.sprx -print -quit)"
+            if [ -z "$RIGHT_SPRX" ]; then
+              echo "OpenOrbis right.sprx was not found"
+              exit 1
+            fi
+            cp "$RIGHT_SPRX" sce_sys/about/right.sprx
+            python3 tools/make_icon.py
+            make
+
+      - name: Upload PKG
+        uses: actions/upload-artifact@v4
+        with:
+          name: RIDA-MUSIC-PS4-PKG
+          path: '*.pkg'
+          if-no-files-found: error
+          retention-days: 14
