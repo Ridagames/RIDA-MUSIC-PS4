@@ -28,7 +28,7 @@ jobs:
 
       - name: Build PS4 PKG with official OpenOrbis Docker image
         run: |
-          docker run --rm \
+          docker run --rm --user "$(id -u):$(id -g)" \
             -v "$GITHUB_WORKSPACE:/workspace" \
             -w /workspace \
             openorbisofficial/toolchain:latest \
