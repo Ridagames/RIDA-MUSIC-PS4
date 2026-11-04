@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout RIDA MUSIC
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -26,22 +26,51 @@ jobs:
       - name: Generate application icon
         run: python tools/make_icon.py
 
-      - name: Build PS4 PKG with official OpenOrbis Docker image
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'
+
+      - name: Checkout OpenOrbis create-fself
+        uses: actions/checkout@v4
+        with:
+          repository: OpenOrbis/create-fself
+          path: tools/create-fself
+
+      - name: Checkout OpenOrbis create-gp4
+        uses: actions/checkout@v4
+        with:
+          repository: OpenOrbis/create-gp4
+          path: tools/create-gp4
+
+      - name: Build OpenOrbis helper tools
         run: |
-          docker run --rm --user "$(id -u):$(id -g)" \
+          set -e
+          mkdir -p tools/bin
+          cd tools/create-fself/cmd/create-fself
+          go build -o "$GITHUB_WORKSPACE/tools/bin/create-fself" -modfile=go-linux.mod
+          cd "$GITHUB_WORKSPACE/tools/create-gp4/cmd/create-gp4"
+          go build -o "$GITHUB_WORKSPACE/tools/bin/create-gp4" .
+
+      - name: Build PS4 PKG with OpenOrbis Docker image
+        run: |
+          docker run --rm --user root \
             -v "$GITHUB_WORKSPACE:/workspace" \
             -w /workspace \
             openorbisofficial/toolchain:latest \
             bash -lc '
               set -e
-              : "${OO_PS4_TOOLCHAIN:?OO_PS4_TOOLCHAIN is not set in the OpenOrbis image}"
-              mkdir -p sce_sys/about
+              : "${OO_PS4_TOOLCHAIN:?OO_PS4_TOOLCHAIN is not set}"
+              mkdir -p "$OO_PS4_TOOLCHAIN/bin/linux" sce_sys/about
+              install -m 755 /workspace/tools/bin/create-fself "$OO_PS4_TOOLCHAIN/bin/linux/create-fself"
+              install -m 755 /workspace/tools/bin/create-gp4 "$OO_PS4_TOOLCHAIN/bin/linux/create-gp4"
               RIGHT_SPRX="$(find "$OO_PS4_TOOLCHAIN" -name right.sprx -print -quit)"
               if [ -z "$RIGHT_SPRX" ]; then
                 echo "OpenOrbis right.sprx was not found"
                 exit 1
               fi
               cp "$RIGHT_SPRX" sce_sys/about/right.sprx
+              test -x "$OO_PS4_TOOLCHAIN/bin/linux/PkgTool.Core"
               make
             '
 
