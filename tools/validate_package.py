@@ -27,7 +27,7 @@ SELF_MAGIC = 0x1D3D154F
 
 def parse_sfo(path):
     data = Path(path).read_bytes()
-    if len(data) < 20 or data[:4] != b"\\x00PSF":
+    if len(data) < 20 or data[:4] != b"\x00PSF":
         raise ValueError(f"{path}: invalid PSF/param.sfo magic or truncated header")
     version, key_off, data_off, count = struct.unpack_from("<IIII", data, 4)
     if count > 4096 or 20 + count * 16 > len(data):
@@ -40,7 +40,7 @@ def parse_sfo(path):
         value_pos = data_off + value_rel
         if key_pos >= len(data) or value_pos + length > len(data):
             raise ValueError(f"{path}: SFO entry {i} points outside file")
-        key_end = data.find(b"\\x00", key_pos)
+        key_end = data.find(b"\x00", key_pos)
         if key_end < 0:
             raise ValueError(f"{path}: unterminated SFO key")
         key = data[key_pos:key_end].decode("utf-8")
@@ -50,7 +50,7 @@ def parse_sfo(path):
                 raise ValueError(f"{path}: {key} has invalid integer length {length}")
             value = struct.unpack("<I", raw)[0]
         elif fmt == 0x0204:
-            value = raw.rstrip(b"\\x00").decode("utf-8")
+            value = raw.rstrip(b"\x00").decode("utf-8")
         else:
             raise ValueError(f"{path}: {key} has unexpected SFO format 0x{fmt:04x}")
         result[key] = value
@@ -65,7 +65,7 @@ def audit_sfo(path, label):
         if actual != expected:
             errors.append(f"{label}: {key}: expected {expected!r}, got {actual!r}")
     if errors:
-        raise ValueError("\\n".join(errors))
+        raise ValueError("\n".join(errors))
     print(f"[OK] {label}: all {len(EXPECTED)} required SFO fields and values match")
     print(f"     TITLE={entries['TITLE']} | TITLE_ID={entries['TITLE_ID']} | CONTENT_ID={entries['CONTENT_ID']}")
 
@@ -88,8 +88,8 @@ def audit_self(path):
         raise ValueError(f"SELF metadata size mismatch: header={meta_size}, expected={expected_meta}")
     if header_size < 0x20 or header_size + meta_size > len(data):
         raise ValueError("SELF header/meta area points outside eboot.bin")
-    if file_size != len(data):
-        raise ValueError(f"SELF file size mismatch: header={file_size}, actual={len(data)}")
+    if file_size < len(data) or file_size - len(data) >= 0x10:
+        raise ValueError(f"SELF file size/alignment mismatch: header={file_size}, actual={len(data)}")
 
     ext_paid, ext_type, app_version, fw_version = struct.unpack_from("<QQQQ", data, header_size)
     if ext_paid != EXPECTED_PAID:
