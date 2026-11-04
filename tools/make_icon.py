@@ -20,7 +20,7 @@ try:
     font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 43)
 except OSError:
     font = ImageFont.load_default()
-label = "RIDA MUSIC"
+label = "RGS MUSIC"
 bbox = d.textbbox((0, 0), label, font=font)
 d.text(((size-(bbox[2]-bbox[0]))/2, 408), label, font=font, fill=(245, 248, 246))
 im.save(out, "PNG")
