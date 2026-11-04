@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <sstream>
+#include <sstream>
 #include <orbis/Pad.h>
 #include <orbis/UserService.h>
 #include "graphics.h"
