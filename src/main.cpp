@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <sstream>
 #include <orbis/Pad.h>
 #include <orbis/UserService.h>
 #include "graphics.h"
@@ -45,7 +46,7 @@ static void label(Scene2D* s,int x,int y,const char* t,int scale,int r,int g,int
  Color c={(uint8_t)r,(uint8_t)g,(uint8_t)b}; text(s,x,y,t,scale,c);
 }
 
-static void draw(Scene2D* s,int tab,int selected,bool playing) {
+static void draw(Scene2D* s,int tab,int selected,bool queued) {
  rect(s,0,0,W,H,12,15,14);
  rect(s,0,0,330,H,17,22,20);
  rect(s,44,48,54,54,29,185,84);
@@ -89,8 +90,8 @@ static void draw(Scene2D* s,int tab,int selected,bool playing) {
   if(i==selected) rect(s,x+22,652,286,5,29,185,84);
  }
  rect(s,390,930,1460,2,48,58,52);
- label(s,390,965,playing?"PLAYBACK ACTIVE":"PREVIEW MODE - AUDIO STREAMING NOT CONNECTED",2,160,180,168);
- label(s,390,1015,"D-PAD NAVIGATE     X SELECT     L1/R1 CHANGE SECTION     OPTIONS EXIT",2,115,135,123);
+ label(s,390,965,queued?"TRACK QUEUED - STREAMING NOT CONNECTED":"PREVIEW MODE - AUDIO STREAMING NOT CONNECTED",2,160,180,168);
+ label(s,390,1015,"D-PAD NAVIGATE     X SELECT     L1/R1 CHANGE SECTION     OPTIONS HOME",2,115,135,123);
 }
 
 int main(void) {
@@ -105,7 +106,7 @@ int main(void) {
  if(pad<0) printf("RIDA MUSIC: CONTROLLER NOT FOUND\n");
  OrbisPadData state; memset(&state,0,sizeof(state));
  uint32_t previous=0;
- int tab=0,selected=0; bool playing=false; int frame=0;
+ int tab=0,selected=0; bool queued=false; int frame=0;
  OrbisPadColor light={29,185,84,0};
  if(pad>=0) scePadSetLightBar(pad,&light);
  for(;;) {
@@ -119,10 +120,10 @@ int main(void) {
   if(pressed&ORBIS_PAD_BUTTON_R1) tab=(tab+1)%4;
   if(pressed&ORBIS_PAD_BUTTON_LEFT) tab=(tab+3)%4;
   if(pressed&ORBIS_PAD_BUTTON_RIGHT) tab=(tab+1)%4;
-  if(pressed&ORBIS_PAD_BUTTON_CROSS) playing=!playing;
-  if(pressed&ORBIS_PAD_BUTTON_CIRCLE) playing=false;
+  if(pressed&ORBIS_PAD_BUTTON_CROSS) queued=!queued;
+  if(pressed&ORBIS_PAD_BUTTON_CIRCLE) queued=false;
   if(pressed&ORBIS_PAD_BUTTON_OPTIONS) { tab=0; selected=0; }
-  draw(scene,tab,selected,playing);
+  draw(scene,tab,selected,queued);
   scene->SubmitFlip(frame); scene->FrameWait(frame); scene->FrameBufferSwap(); frame++;
   sceKernelUsleep(16000);
  }
