@@ -1,21 +1,22 @@
 TITLE       := RIDA MUSIC
-VERSION     := 0.01
+VERSION     := 0.02
 TITLE_ID    := RIDA00001
 CONTENT_ID  := IV0000-RIDA00001_00-RIDAMUSIC0000000
 
-LIBS        := -lc -lkernel
+LIBS        := -lc -lkernel -lc++ -lSceVideoOut -lScePad -lSceUserService
 TOOLCHAIN   := $(OO_PS4_TOOLCHAIN)
 PROJDIR     := src
 INTDIR      := $(PROJDIR)/x64/Debug
 CFILES      := $(wildcard $(PROJDIR)/*.c)
-OBJS        := $(patsubst $(PROJDIR)/%.c,$(INTDIR)/%.o,$(CFILES))
-ASSETS      := $(wildcard assets/*)
-LIBMODULES  := $(wildcard sce_module/*)
+CPPFILES    := $(wildcard $(PROJDIR)/*.cpp)
+OBJS        := $(patsubst $(PROJDIR)/%.c,$(INTDIR)/%.o,$(CFILES)) $(patsubst $(PROJDIR)/%.cpp,$(INTDIR)/%.o,$(CPPFILES))
 CFLAGS      := --target=x86_64-pc-freebsd12-elf -fPIC -funwind-tables -c -isysroot $(TOOLCHAIN) -isystem $(TOOLCHAIN)/include
+CXXFLAGS    := $(CFLAGS) -isystem $(TOOLCHAIN)/include/c++/v1
 LDFLAGS     := -m elf_x86_64 -pie --script $(TOOLCHAIN)/link.x --eh-frame-hdr -L$(TOOLCHAIN)/lib $(LIBS) $(TOOLCHAIN)/lib/crt1.o
 
 ifeq ($(shell uname -s),Linux)
 CC := clang
+CXX := clang++
 LD := ld.lld
 CDIR := linux
 else
@@ -28,7 +29,7 @@ all: $(CONTENT_ID).pkg
 $(CONTENT_ID).pkg: pkg.gp4
 	$(TOOLCHAIN)/bin/$(CDIR)/PkgTool.Core pkg_build $< .
 
-pkg.gp4: eboot.bin sce_sys/about/right.sprx sce_sys/param.sfo sce_sys/icon0.png $(LIBMODULES) $(ASSETS)
+pkg.gp4: eboot.bin sce_sys/about/right.sprx sce_sys/param.sfo sce_sys/icon0.png $(wildcard assets/*)
 	$(TOOLCHAIN)/bin/$(CDIR)/create-gp4 -out $@ --content-id=$(CONTENT_ID) --files "$^"
 
 sce_sys/param.sfo: Makefile
@@ -47,6 +48,9 @@ sce_sys/param.sfo: Makefile
 
 $(INTDIR):
 	mkdir -p $(INTDIR)
+
+$(INTDIR)/%.o: $(PROJDIR)/%.cpp | $(INTDIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
 
 $(INTDIR)/%.o: $(PROJDIR)/%.c | $(INTDIR)
 	$(CC) $(CFLAGS) -o $@ $<
