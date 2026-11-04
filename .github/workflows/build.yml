@@ -1,4 +1,4 @@
-name: Build RIDA MUSIC PS4
+name: Build RGS MUSIC PS4
 
 on:
   push:
@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout RIDA MUSIC
+      - name: Checkout RGS MUSIC
         uses: actions/checkout@v4
 
       - name: Checkout OpenOrbis sample graphics helpers
@@ -64,8 +64,9 @@ jobs:
           cd "$GITHUB_WORKSPACE/tools/create-gp4/cmd/create-gp4"
           go build -o "$GITHUB_WORKSPACE/tools/bin/create-gp4" .
 
-      - name: Build PS4 PKG with OpenOrbis Docker image
+      - name: Build and independently inspect PS4 package
         run: |
+          set -e
           docker run --rm --user root \
             -v "$GITHUB_WORKSPACE:/workspace" \
             -w /workspace \
@@ -73,19 +74,32 @@ jobs:
             bash -lc '
               set -e
               : "${OO_PS4_TOOLCHAIN:?OO_PS4_TOOLCHAIN is not set}"
-              mkdir -p "$OO_PS4_TOOLCHAIN/bin/linux" sce_sys/about
+              mkdir -p "$OO_PS4_TOOLCHAIN/bin/linux" sce_sys/about /workspace/audit_pkg
               install -m 755 /workspace/tools/bin/create-fself "$OO_PS4_TOOLCHAIN/bin/linux/create-fself"
               install -m 755 /workspace/tools/bin/create-gp4 "$OO_PS4_TOOLCHAIN/bin/linux/create-gp4"
               RIGHT_SPRX="$(find "$OO_PS4_TOOLCHAIN" -name right.sprx -print -quit)"
               if [ -z "$RIGHT_SPRX" ]; then echo "OpenOrbis right.sprx was not found"; exit 1; fi
               cp "$RIGHT_SPRX" sce_sys/about/right.sprx
               make
+              PKG_FILE="$(find /workspace -maxdepth 1 -name "*.pkg" -print -quit)"
+              test -n "$PKG_FILE"
+              echo "=== PKG cryptographic/hash validation ==="
+              "$OO_PS4_TOOLCHAIN/bin/linux/PkgTool.Core" pkg_validate --verbose "$PKG_FILE"
+              echo "=== Extracting the actual installed SFO from the PKG ==="
+              "$OO_PS4_TOOLCHAIN/bin/linux/PkgTool.Core" pkg_extract --verbose "$PKG_FILE" /workspace/audit_pkg
             '
 
-      - name: Upload PKG
+      - name: Audit SELF header, fake-signature block and SFO metadata
+        run: |
+          python tools/validate_package.py \
+            --eboot eboot.bin \
+            --sfo sce_sys/param.sfo \
+            --packaged-sfo audit_pkg/sce_sys/param.sfo
+
+      - name: Upload validated PKG
         uses: actions/upload-artifact@v4
         with:
-          name: RIDA-MUSIC-PS4-PKG
+          name: RGS-MUSIC-PS4-PKG
           path: '*.pkg'
           if-no-files-found: error
           retention-days: 14
