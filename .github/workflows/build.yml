@@ -117,7 +117,7 @@ jobs:
           python tools/validate_package.py \
             --eboot eboot.bin \
             --sfo sce_sys/param.sfo \
-            --packaged-sfo audit_pkg/sce_sys/param.sfo
+            --packaged-sfo audit_pkg/uroot/sce_sys/param.sfo
 
       - name: Upload validated PKG
         uses: actions/upload-artifact@v4
