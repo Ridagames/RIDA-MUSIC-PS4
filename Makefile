@@ -1,5 +1,5 @@
 TITLE       := RGS MUSIC
-VERSION     := 0.02
+VERSION     := 0.03
 TITLE_ID    := RIDA00001
 CONTENT_ID  := IV0000-RIDA00001_00-RIDAMUSIC0000000
 
@@ -23,13 +23,16 @@ else
 $(error This automated build currently targets Linux)
 endif
 
+# Include runtime PRX modules in the actual GP4 file list.
+RUNTIME_PRX := $(sort $(wildcard sce_module/*.prx))
+
 .PHONY: all clean
 all: $(CONTENT_ID).pkg
 
 $(CONTENT_ID).pkg: pkg.gp4
 	$(TOOLCHAIN)/bin/$(CDIR)/PkgTool.Core pkg_build $< .
 
-pkg.gp4: eboot.bin sce_sys/about/right.sprx sce_sys/param.sfo sce_sys/icon0.png $(wildcard assets/*)
+pkg.gp4: eboot.bin sce_sys/about/right.sprx sce_sys/param.sfo sce_sys/icon0.png $(wildcard assets/*) $(RUNTIME_PRX)
 	$(TOOLCHAIN)/bin/$(CDIR)/create-gp4 -out $@ --content-id=$(CONTENT_ID) --files "$^"
 
 sce_sys/param.sfo: Makefile
