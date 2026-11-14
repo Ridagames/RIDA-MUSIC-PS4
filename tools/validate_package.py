@@ -33,7 +33,7 @@ SELF_SIGNATURE_SIZE = 0x100
 
 def parse_sfo(path):
     data = Path(path).read_bytes()
-    if len(data) < 20 or data[:4] != b"\\x00PSF":
+    if len(data) < 20 or data[:4] != b"\x00PSF":
         raise ValueError(f"{path}: invalid PSF/param.sfo magic or truncated header")
     _, key_off, data_off, count = struct.unpack_from("<IIII", data, 4)
     if count > 4096 or 20 + count * 16 > len(data):
@@ -46,7 +46,7 @@ def parse_sfo(path):
         value_pos = data_off + value_rel
         if key_pos >= len(data) or value_pos + length > len(data):
             raise ValueError(f"{path}: SFO entry {i} points outside file")
-        key_end = data.find(b"\\x00", key_pos)
+        key_end = data.find(b"\x00", key_pos)
         if key_end < 0:
             raise ValueError(f"{path}: unterminated SFO key")
         key = data[key_pos:key_end].decode("utf-8")
@@ -56,7 +56,7 @@ def parse_sfo(path):
                 raise ValueError(f"{path}: {key} has invalid integer length {length}")
             value = struct.unpack("<I", raw)[0]
         elif fmt == 0x0204:
-            value = raw.rstrip(b"\\x00").decode("utf-8")
+            value = raw.rstrip(b"\x00").decode("utf-8")
         else:
             raise ValueError(f"{path}: {key} has unexpected SFO format 0x{fmt:04x}")
         result[key] = value
@@ -71,7 +71,7 @@ def audit_sfo(path, label):
         if actual != expected:
             errors.append(f"{label}: {key}: expected {expected!r}, got {actual!r}")
     if errors:
-        raise ValueError("\\n".join(errors))
+        raise ValueError("\n".join(errors))
     print(f"[OK] {label}: all {len(EXPECTED)} required SFO fields and values match")
     print(f"     TITLE={entries['TITLE']} | TITLE_ID={entries['TITLE_ID']} | CONTENT_ID={entries['CONTENT_ID']}")
 
@@ -127,7 +127,7 @@ def audit_self(path):
     if signature_paid != EXPECTED_PAID:
         raise ValueError(f"SELF AUTHINFO PAID mismatch: 0x{signature_paid:016x}")
     expected_signature = struct.pack("<QQ", len(EXPECTED_AUTHINFO), EXPECTED_PAID) + EXPECTED_AUTHINFO[8:]
-    expected_signature = expected_signature.ljust(SELF_SIGNATURE_SIZE, b"\\x00")
+    expected_signature = expected_signature.ljust(SELF_SIGNATURE_SIZE, b"\x00")
     if signature != expected_signature:
         raise ValueError("SELF AUTHINFO/signature payload does not match the configured OpenOrbis AUTHINFO")
 
