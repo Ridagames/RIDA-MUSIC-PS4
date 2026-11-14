@@ -115,7 +115,7 @@ jobs:
               PkgTool="$OO_PS4_TOOLCHAIN/bin/linux/PkgTool.Core"
               ENTRY_LIST="$("$PkgTool" pkg_listentries "$PKG_FILE")"
               printf "%s\n" "$ENTRY_LIST"
-              SFO_ENTRY_ID="$(printf "%s\n" "$ENTRY_LIST" | awk "tolower(\$0) ~ /param\\.sfo/ {print \$1; exit}")"
+              SFO_ENTRY_ID="$(printf "%s\n" "$ENTRY_LIST" | awk "toupper(\$0) ~ /PARAM_SFO/ {print \$4; exit}")"
               if [ -z "$SFO_ENTRY_ID" ]; then
                 echo "ERROR: PARAM.SFO entry was not found in PKG metadata table"
                 exit 1
