@@ -11,7 +11,7 @@ from pathlib import Path
 
 EXPECTED = {
     "APP_TYPE": 1,
-    "APP_VER": "0.02",
+    "APP_VER": "0.03",
     "ATTRIBUTE": 0,
     "CATEGORY": "gd",
     "CONTENT_ID": "IV0000-RIDA00001_00-RIDAMUSIC0000000",
@@ -19,7 +19,7 @@ EXPECTED = {
     "SYSTEM_VER": 0,
     "TITLE": "RGS MUSIC",
     "TITLE_ID": "RIDA00001",
-    "VERSION": "0.02",
+    "VERSION": "0.03",
 }
 EXPECTED_PAID = 0x3800000000000011
 SELF_MAGIC = 0x1D3D154F
