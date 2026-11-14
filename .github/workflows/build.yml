@@ -74,19 +74,42 @@ jobs:
             bash -lc '
               set -e
               : "${OO_PS4_TOOLCHAIN:?OO_PS4_TOOLCHAIN is not set}"
-              mkdir -p "$OO_PS4_TOOLCHAIN/bin/linux" sce_sys/about /workspace/audit_pkg
+              mkdir -p "$OO_PS4_TOOLCHAIN/bin/linux" sce_sys/about sce_module /workspace/audit_pkg
               install -m 755 /workspace/tools/bin/create-fself "$OO_PS4_TOOLCHAIN/bin/linux/create-fself"
               install -m 755 /workspace/tools/bin/create-gp4 "$OO_PS4_TOOLCHAIN/bin/linux/create-gp4"
+
+              echo "=== Collecting required runtime modules ==="
+              for module in libc.prx libSceFios2.prx; do
+                source_module="$(find "$OO_PS4_TOOLCHAIN" -type f -name "$module" -print -quit)"
+                if [ -z "$source_module" ]; then
+                  echo "ERROR: required runtime module $module was not found in OpenOrbis toolchain"
+                  exit 1
+                fi
+                install -m 644 "$source_module" "sce_module/$module"
+                test -s "sce_module/$module"
+                echo "[OK] sce_module/$module ($(stat -c%s "sce_module/$module") bytes)"
+              done
+
               RIGHT_SPRX="$(find "$OO_PS4_TOOLCHAIN" -name right.sprx -print -quit)"
               if [ -z "$RIGHT_SPRX" ]; then echo "OpenOrbis right.sprx was not found"; exit 1; fi
               cp "$RIGHT_SPRX" sce_sys/about/right.sprx
+
+              echo "=== Build EBOOT and GP4 including sce_module PRX files ==="
               make
               PKG_FILE="$(find /workspace -maxdepth 1 -name "*.pkg" -print -quit)"
               test -n "$PKG_FILE"
+
               echo "=== PKG cryptographic/hash validation ==="
               "$OO_PS4_TOOLCHAIN/bin/linux/PkgTool.Core" pkg_validate --verbose "$PKG_FILE"
-              echo "=== Extracting the actual installed SFO from the PKG ==="
+              echo "=== Extracting the actual installed SFO and runtime modules ==="
               "$OO_PS4_TOOLCHAIN/bin/linux/PkgTool.Core" pkg_extract --verbose "$PKG_FILE" /workspace/audit_pkg
+              for module in libc.prx libSceFios2.prx; do
+                test -s "/workspace/audit_pkg/sce_module/$module" || {
+                  echo "ERROR: $module is missing from the final PKG"
+                  exit 1
+                }
+                echo "[OK] final PKG contains sce_module/$module"
+              done
             '
 
       - name: Audit SELF header, fake-signature block and SFO metadata
