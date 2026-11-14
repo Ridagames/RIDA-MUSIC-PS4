@@ -26,6 +26,9 @@ endif
 # Include runtime PRX modules in the actual GP4 file list.
 RUNTIME_PRX := $(sort $(wildcard sce_module/*.prx))
 
+# OpenOrbis sample authinfo required for a valid fake SELF extension header.
+AUTHINFO := 000000000000000000000000001C004000FF000000000080000000000000000000000000000000000000008000400040000000000000008000000000000000080040FFFF000000F000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+
 .PHONY: all clean
 all: $(CONTENT_ID).pkg
 
@@ -60,7 +63,7 @@ $(INTDIR)/%.o: $(PROJDIR)/%.c | $(INTDIR)
 
 eboot.bin: $(OBJS)
 	$(LD) $(OBJS) -o $(INTDIR)/rida_music.elf $(LDFLAGS)
-	$(TOOLCHAIN)/bin/$(CDIR)/create-fself -in=$(INTDIR)/rida_music.elf -out=$(INTDIR)/rida_music.oelf --eboot "eboot.bin" --paid 0x3800000000000011
+	$(TOOLCHAIN)/bin/$(CDIR)/create-fself -in=$(INTDIR)/rida_music.elf -out=$(INTDIR)/rida_music.oelf --eboot "eboot.bin" --paid 0x3800000000000011 --authinfo $(AUTHINFO)
 
 clean:
 	rm -rf $(CONTENT_ID).pkg pkg.gp4 eboot.bin sce_sys/param.sfo $(INTDIR)
