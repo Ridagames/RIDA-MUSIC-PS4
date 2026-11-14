@@ -104,7 +104,7 @@ jobs:
               echo "=== Extracting the actual installed SFO and runtime modules ==="
               "$OO_PS4_TOOLCHAIN/bin/linux/PkgTool.Core" pkg_extract --verbose "$PKG_FILE" /workspace/audit_pkg
               for module in libc.prx libSceFios2.prx; do
-                test -s "/workspace/audit_pkg/sce_module/$module" || {
+                test -s "/workspace/audit_pkg/uroot/sce_module/$module" || {
                   echo "ERROR: $module is missing from the final PKG"
                   exit 1
                 }
