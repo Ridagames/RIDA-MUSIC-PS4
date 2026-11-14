@@ -101,7 +101,7 @@ jobs:
 
               echo "=== PKG cryptographic/hash validation ==="
               "$OO_PS4_TOOLCHAIN/bin/linux/PkgTool.Core" pkg_validate --verbose "$PKG_FILE"
-              echo "=== Extracting the actual installed SFO and runtime modules ==="
+              echo "=== Extracting installed game filesystem ==="
               "$OO_PS4_TOOLCHAIN/bin/linux/PkgTool.Core" pkg_extract --verbose "$PKG_FILE" /workspace/audit_pkg
               for module in libc.prx libSceFios2.prx; do
                 test -s "/workspace/audit_pkg/uroot/sce_module/$module" || {
@@ -110,6 +110,19 @@ jobs:
                 }
                 echo "[OK] final PKG contains sce_module/$module"
               done
+
+              echo "=== Extracting PKG metadata PARAM.SFO entry ==="
+              PkgTool="$OO_PS4_TOOLCHAIN/bin/linux/PkgTool.Core"
+              ENTRY_LIST="$("$PkgTool" pkg_listentries "$PKG_FILE")"
+              printf "%s\n" "$ENTRY_LIST"
+              SFO_ENTRY_ID="$(printf "%s\n" "$ENTRY_LIST" | awk 'tolower($0) ~ /param\.sfo/ {print $1; exit}')"
+              if [ -z "$SFO_ENTRY_ID" ]; then
+                echo "ERROR: PARAM.SFO entry was not found in PKG metadata table"
+                exit 1
+              fi
+              "$PkgTool" pkg_extractentry "$PKG_FILE" "$SFO_ENTRY_ID" /workspace/audit_pkg/param.sfo
+              test -s /workspace/audit_pkg/param.sfo
+              echo "[OK] extracted PKG metadata param.sfo (entry $SFO_ENTRY_ID)"
             '
 
       - name: Audit SELF header, fake-signature block and SFO metadata
@@ -117,7 +130,7 @@ jobs:
           python tools/validate_package.py \
             --eboot eboot.bin \
             --sfo sce_sys/param.sfo \
-            --packaged-sfo audit_pkg/uroot/sce_sys/param.sfo
+            --packaged-sfo audit_pkg/param.sfo
 
       - name: Upload validated PKG
         uses: actions/upload-artifact@v4
